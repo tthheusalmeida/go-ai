@@ -12,7 +12,7 @@ GO_INSTALL_DIR="/usr/local/go"
 GO_PROFILE_FILE="/etc/profile.d/go.sh"
 
 # ============================================================
-# Core
+# Cores
 # ============================================================
 
 RED='\033[0;31m'
@@ -42,6 +42,23 @@ require_root() {
         error "Execute: sudo $0"
         exit 1
     fi
+}
+
+spinner() {
+    local pid="$1"
+    local message="$2"
+    local chars='|/-\'
+    local i=0
+
+    while kill -0 "$pid" 2>/dev/null; do
+        printf "\r${GREEN}[INFO]${NC} %s %s" \
+            "$message" \
+            "${chars:i++%${#chars}:1}"
+
+        sleep 0.1
+    done
+
+    printf "\r${GREEN}[INFO]${NC} %s ✓\n" "$message"
 }
 
 # ============================================================
@@ -87,15 +104,13 @@ install_golang() {
 
     temp_file="$(mktemp --suffix=.tar.gz)"
 
-    trap 'rm -f "$temp_file"' RETURN
-
     log "Baixando Go..."
 
     curl \
         --location \
         --fail \
         --show-error \
-        --silent \
+        --progress-bar \
         "$GOLANG_INSTALLER_URL" \
         --output "$temp_file"
 
@@ -111,7 +126,15 @@ install_golang() {
 
     tar \
         -C /usr/local \
-        -xzf "$temp_file"
+        -xzf "$temp_file" &
+
+    local tar_pid=$!
+
+    spinner "$tar_pid" "Extraindo Go"
+
+    wait "$tar_pid"
+
+    rm -f "$temp_file"
 
     if [[ ! -x "$GO_INSTALL_DIR/bin/go" ]]; then
         error "A instalação do Go falhou."
@@ -134,7 +157,7 @@ EOF
 
     chmod 644 "$GO_PROFILE_FILE"
 
-    export PATH="$PATH:$GO_INSTALL_DIR/bin"
+    source "$GO_PROFILE_FILE"
 
     log "PATH do Go configurado."
 }
@@ -143,21 +166,55 @@ EOF
 # Validação
 # ============================================================
 
+validate_command() {
+    local command="$1"
+    local name="$2"
+
+    if command -v "$command" >/dev/null 2>&1; then
+        log "✓ $name"
+        return 0
+    fi
+
+    error "✗ $name"
+    return 1
+}
+
 validate_installation() {
     log "Validando instalação..."
 
-    if ! command -v go >/dev/null 2>&1; then
-        error "Go não foi encontrado no PATH."
+    local failed=0
+
+    validate_command "curl" "curl" || failed=1
+    validate_command "wget" "wget" || failed=1
+    validate_command "git" "git" || failed=1
+    validate_command "unzip" "unzip" || failed=1
+    validate_command "tar" "tar" || failed=1
+    validate_command "gcc" "build-essential" || failed=1
+
+    if command -v go >/dev/null 2>&1; then
+        local go_version
+
+        go_version="$(go version | awk '{print $3}')"
+
+        log "✓ Go ${go_version#go}"
+    else
+        error "✗ Go"
+        failed=1
+    fi
+
+    if [[ ":$PATH:" == *":$GO_INSTALL_DIR/bin:"* ]]; then
+        log "✓ Go PATH"
+    else
+        error "✗ Go PATH"
+        failed=1
+    fi
+
+    if [[ "$failed" -ne 0 ]]; then
+        error "A validação encontrou problemas."
         exit 1
     fi
 
-    log "Go encontrado."
-
-    go version
-
-    log "Localização do Go:"
-
-    command -v go
+    log "Todas as dependências estão funcionando."
 }
 
 # ============================================================
@@ -176,6 +233,8 @@ main() {
     validate_installation
 
     log "Configuração concluída com sucesso!"
+    log "Para atualizar o terminal atual:"
+    log "source /etc/profile.d/go.sh"
 }
 
 main "$@"
