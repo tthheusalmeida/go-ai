@@ -30,7 +30,7 @@ func main() {
 		Handler: router,
 	}
 
-	log.Println("Server running on http://localhost:8080")
+	log.Println("[GO-AI] running on http://localhost:8080")
 
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
