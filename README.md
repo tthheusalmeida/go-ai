@@ -2,7 +2,7 @@
 
 > Um serviço de ferramentas de IA em Go.
 
-## Configurando a máquina
+## Configurar a máquina
 
 Dê permissão de execução ao script:
 
@@ -30,4 +30,10 @@ Em caso de sucesso, aparecerá a mensagem:
 [INFO] ✓ Go PATH
 [INFO] Todas as dependências estão funcionando.
 [INFO] Configuração concluída com sucesso!
+```
+
+## Rodar o projeto
+
+```bash
+go run ./cmd/api
 ```
