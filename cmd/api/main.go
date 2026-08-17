@@ -4,33 +4,20 @@ import (
 	"log"
 	"net/http"
 
-	"go-ai/internal/handler"
-	"go-ai/internal/repository"
-	"go-ai/internal/router"
-	"go-ai/internal/service"
+	"go-ai/config"
+	"go-ai/internal/app"
 )
 
 func main() {
-	healthRepository := repository.NewInMemoryHealthRepository()
-
-	healthService := service.NewHealthService(
-		healthRepository,
-	)
-
-	healthHandler := handler.NewHealthHandler(
-		healthService,
-	)
-
-	router := router.New(
-		healthHandler,
-	)
+  env := config.Load()
+  router := app.New()
 
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":"+env.Port,
 		Handler: router,
 	}
 
-	log.Println("[GO-AI] running on http://localhost:8080")
+	log.Printf("[GO-AI] running on http://%s:%s\n", env.Host, env.Port)
 
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
