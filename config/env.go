@@ -8,12 +8,20 @@ import (
 type Env struct {
   Port string
   Host string
+
+  AIProvider string
+  AIBaseURL string
+  AIModel string
 }
 
 func Load() Env {
   return Env{
     Port: GetEnv("PORT", "8080"),
     Host: GetEnv("HOST", "localhost"),
+
+    AIProvider: GetEnv("AI_PROVIDER", "ollama"),
+    AIBaseURL:  GetEnv("AI_BASE_URL", "http://localhost:11434"),
+    AIModel:    GetEnv("AI_MODEL", "qwen3:4b"),
   }
 }
 

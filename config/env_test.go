@@ -53,6 +53,10 @@ func TestLoad(t *testing.T) {
 	t.Setenv("PORT", "9000")
 	t.Setenv("HOST", "localhost")
 
+  t.Setenv("AI_PROVIDER", "ollama")
+  t.Setenv("AI_BASE_URL", "http://localhost:11434")
+  t.Setenv("AI_MODEL", "llama3.2")
+
 	env := Load()
 
 	if env.Port != "9000" {
@@ -62,4 +66,16 @@ func TestLoad(t *testing.T) {
 	if env.Host != "localhost" {
 		t.Errorf("expected host localhost, got %s", env.Host)
 	}
+
+  if env.AIProvider != "ollama" {
+    t.Errorf("expected AI provider ollama, got %s", env.AIProvider)
+  }
+
+  if env.AIBaseURL != "http://localhost:11434" {
+    t.Errorf("expected AI base URL http://localhost:11434, got %s", env.AIBaseURL)
+  }
+
+  if env.AIModel != "llama3.2" {
+    t.Errorf("expected AI model llama3.2, got %s", env.AIModel)
+  }
 }

@@ -26,8 +26,9 @@ Em caso de sucesso, aparecerá a mensagem:
 [INFO] ✓ unzip
 [INFO] ✓ tar
 [INFO] ✓ build-essential
-[INFO] ✓ Go 1.26.6
-[INFO] ✓ Go PATH
+.
+.
+.
 [INFO] Todas as dependências estão funcionando.
 [INFO] Configuração concluída com sucesso!
 ```
@@ -36,4 +37,19 @@ Em caso de sucesso, aparecerá a mensagem:
 
 ```bash
 go run ./cmd/api
+```
+
+## Instalar o modelo
+
+Para executar o projeto, é necessário instalar um modelo.
+Exemplo de instalação do `Quen3:4b`:
+
+```bash
+ollama pull qwen3:4b
+```
+
+Listar os modelos:
+
+```bash
+ollama list
 ```

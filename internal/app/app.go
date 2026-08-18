@@ -3,6 +3,7 @@ package app
 import (
 	"net/http"
 
+	"go-ai/internal/ai"
 	"go-ai/internal/handler"
 	"go-ai/internal/repository"
 	"go-ai/internal/router"
@@ -16,10 +17,18 @@ func newHealthHandler() *handler.HealthHandler {
 	return handler.NewHealthHandler(service)
 }
 
-func New() http.Handler {
+func newAIService(provider ai.Provider) *service.AIService {
+	return service.NewAIService(provider)
+}
+
+func New(provider ai.Provider) http.Handler {
 	healthHandler := newHealthHandler()
+
+  aiService := service.NewAIService(provider)
+  aiHandler := handler.NewAIHandler(aiService)
 
 	return router.New(
 		healthHandler,
+    aiHandler,
 	)
 }

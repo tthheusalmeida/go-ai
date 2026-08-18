@@ -1,13 +1,22 @@
 package app
 
 import (
+	"go-ai/internal/ai"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
 func TestNew(t *testing.T) {
-	router := New()
+	provider := &ai.FakeProvider{
+		Response: "test response",
+	}
+
+	router := New(provider)
+
+	if router == nil {
+		t.Fatal("expected application")
+	}
 
 	request := httptest.NewRequest(
 		http.MethodGet,

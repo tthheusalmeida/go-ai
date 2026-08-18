@@ -3,8 +3,10 @@ package router
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"go-ai/internal/ai"
 	"go-ai/internal/handler"
 	"go-ai/internal/model"
 	"go-ai/internal/service"
@@ -18,7 +20,7 @@ func (f *fakeHealthRepository) GetHealth() *model.Health {
 	return f.health
 }
 
-func TestHealthRoute(t *testing.T) {
+func setupRouter() http.Handler {
 	repository := &fakeHealthRepository{
 		health: &model.Health{
 			Status: "ok",
@@ -28,7 +30,18 @@ func TestHealthRoute(t *testing.T) {
 	healthService := service.NewHealthService(repository)
 	healthHandler := handler.NewHealthHandler(healthService)
 
-	router := New(healthHandler)
+	provider := &ai.FakeProvider{
+		Response: "test response",
+	}
+
+	aiService := service.NewAIService(provider)
+	aiHandler := handler.NewAIHandler(aiService)
+
+	return New(healthHandler, aiHandler)
+}
+
+func TestHealthRoute(t *testing.T) {
+	router := setupRouter()
 
 	request := httptest.NewRequest(
 		http.MethodGet,
@@ -45,17 +58,26 @@ func TestHealthRoute(t *testing.T) {
 	}
 }
 
-func TestRouteNotFound(t *testing.T) {
-	repository := &fakeHealthRepository{
-		health: &model.Health{
-			Status: "ok",
-		},
+func TestAIGenerateRoute(t *testing.T) {
+	router := setupRouter()
+
+	request := httptest.NewRequest(
+		http.MethodPost,
+		"/ai/generate",
+		strings.NewReader(`{"prompt":"me responda"}`),
+	)
+
+	response := httptest.NewRecorder()
+
+	router.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", response.Code)
 	}
+}
 
-	healthService := service.NewHealthService(repository)
-	healthHandler := handler.NewHealthHandler(healthService)
-
-	router := New(healthHandler)
+func TestRouteNotFound(t *testing.T) {
+	router := setupRouter()
 
 	request := httptest.NewRequest(
 		http.MethodGet,

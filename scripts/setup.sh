@@ -11,6 +11,8 @@ GOLANG_INSTALLER_URL="https://go.dev/dl/go1.26.6.linux-amd64.tar.gz"
 GO_INSTALL_DIR="/usr/local/go"
 GO_PROFILE_FILE="/etc/profile.d/go.sh"
 
+OLLAMA_INSTALLER_URL="https://ollama.com/install.sh"
+
 # ============================================================
 # Cores
 # ============================================================
@@ -42,6 +44,30 @@ require_root() {
         error "Execute: sudo $0"
         exit 1
     fi
+}
+
+validate_installed_command() {
+    local command="$1"
+    local name="$2"
+
+    if ! command -v "$command" >/dev/null 2>&1; then
+        error "A instalação do $name falhou."
+        exit 1
+    fi
+
+    log "$name instalado com sucesso."
+}
+
+validate_executable() {
+    local path="$1"
+    local name="$2"
+
+    if [[ ! -x "$path" ]]; then
+        error "A instalação do $name falhou."
+        exit 1
+    fi
+
+    log "$name instalado com sucesso."
 }
 
 spinner() {
@@ -136,12 +162,7 @@ install_golang() {
 
     rm -f "$temp_file"
 
-    if [[ ! -x "$GO_INSTALL_DIR/bin/go" ]]; then
-        error "A instalação do Go falhou."
-        exit 1
-    fi
-
-    log "Go instalado com sucesso."
+    validate_executable "$GO_INSTALL_DIR/bin/go" "Go"
 }
 
 # ============================================================
@@ -160,6 +181,27 @@ EOF
     source "$GO_PROFILE_FILE"
 
     log "PATH do Go configurado."
+}
+
+# ============================================================
+# Ollama
+# ============================================================
+
+install_ollama() {
+    log "Instalando Ollama..."
+
+    if [[ -z "$OLLAMA_INSTALLER_URL" ]]; then
+        error "OLLAMA_INSTALLER_URL não foi configurada."
+        exit 1
+    fi
+
+    curl \
+        --fail \
+        --show-error \
+        --location \
+        "$OLLAMA_INSTALLER_URL" | sh
+
+    validate_installed_command "ollama" "Ollama"
 }
 
 # ============================================================
@@ -190,6 +232,7 @@ validate_installation() {
     validate_command "unzip" "unzip" || failed=1
     validate_command "tar" "tar" || failed=1
     validate_command "gcc" "build-essential" || failed=1
+    validate_command "ollama" "Ollama" || failed=1
 
     if command -v go >/dev/null 2>&1; then
         local go_version
@@ -199,6 +242,17 @@ validate_installation() {
         log "✓ Go ${go_version#go}"
     else
         error "✗ Go"
+        failed=1
+    fi
+
+    if command -v ollama >/dev/null 2>&1; then
+        local ollama_version
+
+        ollama_version="$(ollama --version)"
+
+        log "✓ ${ollama_version}"
+    else
+        error "✗ Ollama"
         failed=1
     fi
 
@@ -230,6 +284,7 @@ main() {
     install_base_packages
     install_golang
     configure_go_path
+    install_ollama
     validate_installation
 
     log "Configuração concluída com sucesso!"

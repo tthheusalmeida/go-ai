@@ -5,12 +5,22 @@ import (
 	"net/http"
 
 	"go-ai/config"
+	"go-ai/internal/ai"
 	"go-ai/internal/app"
 )
 
 func main() {
   env := config.Load()
-  router := app.New()
+  provider, err := ai.NewProvider(
+    env.AIProvider,
+    env.AIBaseURL,
+    env.AIModel,
+  )
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  router := app.New(provider)
 
 	server := &http.Server{
 		Addr:    ":"+env.Port,
